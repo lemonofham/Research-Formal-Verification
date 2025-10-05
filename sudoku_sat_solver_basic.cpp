@@ -17,18 +17,23 @@ void set_literals(int i, int grid_length, int block_length, vector<int>& literal
 int_vector_tuple depth_first_search(int grid_length, int block_length, vector<int>& grid, vector<int>& literals, vector<int>& number_of_false, const vector<int>& all_block_indices, bool extra=false, const vector<int>& grid_for_clause={});
 int_vector_tuple sudoku_sat_solver(vector<int>& grid);
 void initial_setup(int grid_length, vector<int>& grid, const vector<int>& all_block_indices);
-void print_sudoku(int grid_length, const vector<int>& grid, int start_index=0);
+void print_sudoku(int grid_length, int block_length, const vector<int>& grid, int start_index=0);
 
 int main()
 {
-	int n = 9;
 	// int n;
+	// cout<<"Enter the length of your Sudoku: ";
 	// cin>>n;
+	int n = 9;
 	int grid_size = n * n;
+	int block_size = (int) sqrt(n);
 	vector<int> grid(grid_size, 0);
-	grid = {0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 2, 0, 3, 0, 0, 0, 0, 4, 1, 7, 0, 0, 6, 0, 9, 5, 0, 3, 0, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 7, 0, 6, 1, 0, 0, 7, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 5, 0, 0, 0, 9, 7, 0, 0, 0, 0, 9, 3, 8, 0};
+	// grid = {0, 0, 0, 4, 0, 0, 0, 0, 2, 0, 0, 3, 4, 0, 1, 2};
+	grid = {2, 0, 8, 0, 4, 9, 0, 7, 1, 0, 0, 6, 0, 0, 7, 0, 9, 4, 0, 9, 7, 0, 0, 3, 5, 0, 0, 7, 6, 0, 0, 0, 5, 0, 0, 0, 9, 0, 5, 0, 0, 0, 1, 0, 6, 0, 0, 0, 9, 0, 0, 0, 8, 5, 0, 0, 3, 5, 0, 0, 6, 1, 0, 5, 7, 0, 1, 0, 0, 8, 0, 0, 6, 1, 0, 4, 7, 0, 9, 0, 3};
 	// for(int i = 0; i < grid_size; i++)
 	// 	cin>>grid[i];
+	cout<<"Your Sudoku: "<<endl;
+	print_sudoku(n, block_size, grid);
 	auto start = std::chrono::high_resolution_clock::now();
 	int final_result;
 	vector<int> returned_grid;
@@ -38,14 +43,13 @@ int main()
 	else if(final_result == 1)
 	{
 		cout<<"Multiple Solutions Exist for this Sudoku!!\nTwo such are:"<<endl;
-		print_sudoku(n, returned_grid);
-		cout<<endl;
-		print_sudoku(n, returned_grid, grid_size);
+		print_sudoku(n, block_size, returned_grid);
+		print_sudoku(n, block_size, returned_grid, grid_size);
 	}
 	else
 	{
-		cout<<"Solution Exists!!"<<endl;
-		print_sudoku(n, returned_grid);
+		cout<<"Solution Exists!! Solution: "<<endl;
+		print_sudoku(n, block_size, returned_grid);
 	}
 	auto end = std::chrono::high_resolution_clock::now();
 	auto d = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
@@ -118,6 +122,7 @@ int_vector_tuple depth_first_search(int grid_length, int block_length, vector<in
 	{
 		if(literals[i] == 0)
 		{
+			cout<<"Set literal "<<i<<" to true!"<<endl;
 			temp_grid[i / grid_length] = (i % grid_length) + 1;
 			set_literals(i / grid_length, grid_length, block_length, temp_literals, temp_grid, number_of_false, all_block_indices);
 			tie(solved, returning_grid) = depth_first_search(grid_length, block_length, temp_grid, temp_literals, number_of_false, all_block_indices, extra, grid_for_clause);
@@ -125,6 +130,7 @@ int_vector_tuple depth_first_search(int grid_length, int block_length, vector<in
 				return make_tuple(solved, returning_grid);
 			else
 			{
+				cout<<"Set literal "<<i<<" to false!"<<endl;
 				temp_grid = grid;
 				temp_literals = literals;
 				temp_literals[i] = 2;
@@ -360,27 +366,61 @@ void initial_setup(int grid_length, vector<int>& grid, const vector<int>& all_bl
 	}
 }
 
-void print_sudoku(int grid_length, const vector<int>& grid, int start_index)
+void print_sudoku(int grid_length, int block_length, const vector<int>& grid, int start_index)
 {
 	for(int i = 0; i < grid_length; i++)
 	{
 		for(int j = 0; j < grid_length; j++)
 		{
-			cout<<grid[grid_length * i + j + start_index];
+			if(grid[grid_length * i + j + start_index] == 0)
+				cout<<" ";
+			else
+				cout<<grid[grid_length * i + j + start_index];
 			if(j != grid_length - 1)
-				cout<<" | ";
+			{
+				if((j + 1) % block_length == 0)
+					cout<<" || ";
+				else
+					cout<<" | ";
+			}
 		}
 		cout<<endl;
 		if(i != grid_length - 1)
 		{
-			for(int j = 0; j < grid_length; j++)
-				if(j != 0)
-					cout<<"--- ";
-				else
-					cout<<"-- ";
-			cout<<endl;
+			if((i + 1) % block_length == 0)
+			{
+				for(int j = 0; j < 2; j++)
+				{
+					for(int k = 0; k < grid_length; k++)
+					{
+						if((k + 1) % block_length == 0)
+							if(k != grid_length - 1)
+								cout<<"-";
+						if(k != 0)
+							cout<<"----";
+						else
+							cout<<"--";
+					}
+					cout<<endl;
+				}
+			}
+			else
+			{
+				for(int j = 0; j < grid_length; j++)
+				{
+					if((j + 1) % block_length == 0)
+						if(j != grid_length - 1)
+							cout<<"-";
+					if(j != 0)
+						cout<<"----";
+					else
+						cout<<"--";
+				}
+				cout<<endl;
+			}
 		}
 	}
+	cout<<endl;
 }
 
 // #include <pybind11/pybind11.h>
